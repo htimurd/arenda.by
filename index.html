@@ -29,7 +29,7 @@
         <label>Когда придете?</label>
         <input type="datetime-local" id="time" required>
         
-        <button type="submit">Забронировать</button>
+        <button type="submit" class="submit-btn">Забронировать</button>
     </form>
 
     <div id="successMsg" class="success-message">
@@ -37,7 +37,7 @@
     </div>
 
     <!-- КНОПКА ДЛЯ АДМИНКИ -->
-    <button class="admin-btn" onclick="toggleAdmin()">Панель администратора (скрыто)</button>
+    <button class="admin-access-btn" onclick="toggleAdmin()">Панель администратора (скрыто)</button>
 
     <!-- СЕКЦИЯ АДМИНКИ -->
     <div id="adminPanel" class="admin-section">
@@ -46,13 +46,13 @@
             <thead>
                 <tr>
                     <th>Клиент</th>
-                    <th>Телефон</th>
-                    <th>Время</th>
+                    <th>Инфо</th>
+                    <th>Статус</th>
                     <th>Действие</th>
                 </tr>
             </thead>
             <tbody id="ordersBody">
-                <!-- Данные вставит JS -->
+                <!-- Сюда JS вставит данные -->
             </tbody>
         </table>
         <button class="clear-btn" onclick="clearAll()">Очистить всё</button>
