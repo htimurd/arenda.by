@@ -1,7 +1,8 @@
 const form = document.getElementById('orderForm');
 const ordersBody = document.getElementById('ordersBody');
+const ADMIN_PASSWORD = "5535";
 
-// ФУНКЦИЯ ОТПРАВКИ ЗАКАЗА
+// ОТПРАВКА ЗАКАЗА
 form.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -10,65 +11,105 @@ form.addEventListener('submit', (e) => {
         name: document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value,
         phone: document.getElementById('phone').value,
         duration: document.getElementById('duration').value,
-        time: document.getElementById('time').value
+        time: document.getElementById('time').value,
+        status: 'new'
     };
 
-    // Сохраняем в LocalStorage
     let orders = JSON.parse(localStorage.getItem('scooter_orders') || '[]');
     orders.push(order);
     localStorage.setItem('scooter_orders', JSON.stringify(orders));
 
-    // Показываем успех
     const successMsg = document.getElementById('successMsg');
     successMsg.style.display = 'block';
     form.reset();
-    renderOrders();
+    
+    // Обновляем таблицу если админка открыта
+    if (document.getElementById('adminPanel').style.display === 'block') {
+        renderOrders();
+    }
     
     setTimeout(() => { successMsg.style.display = 'none'; }, 3000);
 });
 
-// ОТОБРАЖЕНИЕ ЗАКАЗОВ В ТАБЛИЦЕ
+// ПАРОЛЬ НА АДМИНКУ
+window.toggleAdmin = function() {
+    const panel = document.getElementById('adminPanel');
+    
+    if (panel.style.display === 'none' || panel.style.display === '') {
+        const pass = prompt("Введите пароль администратора:");
+        if (pass === ADMIN_PASSWORD) {
+            panel.style.display = 'block';
+            renderOrders();
+        } else if (pass !== null) {
+            alert("Неверный пароль!");
+        }
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+// ОТОБРАЖЕНИЕ ЗАКАЗОВ
 function renderOrders() {
     let orders = JSON.parse(localStorage.getItem('scooter_orders') || '[]');
     ordersBody.innerHTML = '';
 
-    // Выводим новые заказы сверху (через reverse)
+    if (orders.length === 0) {
+        ordersBody.innerHTML = '<tr><td colspan="4" style="text-align:center">Нет заказов</td></tr>';
+        return;
+    }
+
     orders.slice().reverse().forEach(order => {
+        const isNew = order.status === 'new';
+        
         const row = `
             <tr>
-                <td>${order.name}</td>
-                <td><a href="tel:${order.phone}">${order.phone}</a></td>
-                <td>${order.time}<br><b>(${order.duration})</b></td>
-                <td><button class="delete-btn" onclick="deleteOrder(${order.id})">❌</button></td>
+                <td><strong>${order.name}</strong></td>
+                <td>
+                    <a href="tel:${order.phone}">${order.phone}</a><br>
+                    <small>${order.time.replace('T', ' ')} (${order.duration})</small>
+                </td>
+                <td>
+                    <span class="status-badge ${isNew ? 'status-new' : 'status-confirmed'}">
+                        ${isNew ? 'НОВЫЙ' : 'ОДОБРЕН'}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-btns">
+                        ${isNew ? `<button class="approve-btn" onclick="approveOrder(${order.id})" title="Одобрить">✅</button>` : ''}
+                        <button class="delete-btn" onclick="deleteOrder(${order.id})" title="Удалить">❌</button>
+                    </div>
+                </td>
             </tr>
         `;
         ordersBody.innerHTML += row;
     });
 }
 
-// УДАЛЕНИЕ ОДНОГО ЗАКАЗА
-window.deleteOrder = function(id) {
+// ОДОБРЕНИЕ ЗАКАЗА
+window.approveOrder = function(id) {
     let orders = JSON.parse(localStorage.getItem('scooter_orders') || '[]');
-    orders = orders.filter(o => o.id !== id);
+    orders = orders.map(o => {
+        if (o.id === id) o.status = 'confirmed';
+        return o;
+    });
     localStorage.setItem('scooter_orders', JSON.stringify(orders));
     renderOrders();
 }
 
-// ОЧИСТКА ВСЕГО
-window.clearAll = function() {
-    if(confirm('Удалить все записи?')) {
-        localStorage.removeItem('scooter_orders');
+// УДАЛЕНИЕ ЗАКАЗА
+window.deleteOrder = function(id) {
+    if(confirm('Удалить этот заказ?')) {
+        let orders = JSON.parse(localStorage.getItem('scooter_orders') || '[]');
+        orders = orders.filter(o => o.id !== id);
+        localStorage.setItem('scooter_orders', JSON.stringify(orders));
         renderOrders();
     }
 }
 
-// ПОКАЗ/СКРЫТИЕ АДМИНКИ
-window.toggleAdmin = function() {
-    const panel = document.getElementById('adminPanel');
-    const isHidden = panel.style.display === 'none' || panel.style.display === '';
-    panel.style.display = isHidden ? 'block' : 'none';
-    if (isHidden) renderOrders();
+// ПОЛНАЯ ОЧИСТКА
+window.clearAll = function() {
+    if(confirm('Внимание! Это удалит ВСЕ заказы из базы. Продолжить?')) {
+        localStorage.removeItem('scooter_orders');
+        renderOrders();
+    }
 }
-
-// Загрузить данные при старте
-renderOrders();
